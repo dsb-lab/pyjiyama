@@ -1,9 +1,7 @@
 import os
-import pickle
 import shutil
 
 import numpy as np
-import tifffile
 from tifffile import TiffFile
 
 
