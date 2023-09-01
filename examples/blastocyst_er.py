@@ -1,11 +1,5 @@
-import sys
-
-sys.path.append("/home/pablo/Desktop/PhD/projects/embdevtools")
 
 import os
-
-from src.embdevtools.embdevtools import (embryoregistration, get_file_embcode,
-                                         read_img_with_resolution)
 
 home = os.path.expanduser("~")
 path_parent = home + "/"
