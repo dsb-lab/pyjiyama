@@ -9,6 +9,8 @@ Feel free to distribute and use for whatever non-profit use.
 
 ## Usage
 
+For a ready to use example check `examples/example_registration.ipynb`
+
 Let's start by importing the packages
 
 

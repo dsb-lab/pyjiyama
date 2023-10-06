@@ -4,7 +4,6 @@ import shutil
 import numpy as np
 from tifffile import TiffFile
 
-
 def get_file_names(path_data):
     files = os.listdir(path_data)
     return files
