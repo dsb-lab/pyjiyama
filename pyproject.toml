@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyjiyama"
-version = "0.0.1"
+version = "1.0"
 description = "helper python package for 3D image registration using the ImageJ package Fijiyama"
 authors = [
   { name = "Pablo Casani-Galdon", email = "pablocasani@gmail.com" },
