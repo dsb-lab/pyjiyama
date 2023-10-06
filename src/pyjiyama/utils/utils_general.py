@@ -4,9 +4,11 @@ import shutil
 import numpy as np
 from tifffile import TiffFile
 
+
 def get_file_names(path_data):
     files = os.listdir(path_data)
     return files
+
 
 def get_file_embcode(path_data, f, returnfiles=False):
     """
@@ -44,7 +46,6 @@ def get_file_embcode(path_data, f, returnfiles=False):
     if returnfiles:
         return file, name, files
     return file, name
-
 
 
 def read_img_with_resolution(path_to_file, channel=None, stack=True):
@@ -190,4 +191,3 @@ def square_stack4D(hyperstack):
     for t in range(times):
         new_hyperstack[t] = square_stack3D(hyperstack[t])
     return new_hyperstack
-

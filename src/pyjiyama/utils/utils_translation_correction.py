@@ -67,7 +67,9 @@ def centroid_correction_3d_based_on_mid_plane(_IMGS, extra_IMGS=[]):
             IMGS[t + 1, z] = centroid_correction_2d(img, aff_trans)
             for ch in range(len(extra_IMGS_corrected)):
                 imgch = extra_IMGS_corrected[ch][t + 1, z]
-                extra_IMGS_corrected[ch][t + 1, z] = centroid_correction_2d(img, aff_trans)
+                extra_IMGS_corrected[ch][t + 1, z] = centroid_correction_2d(
+                    img, aff_trans
+                )
 
     return IMGS, extra_IMGS_corrected
 
