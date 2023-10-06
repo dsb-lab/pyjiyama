@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import subprocess
-import sys
 from pyjiyama import (square_stack4D, centroid_correction_3d_based_on_mid_plane, generate_fijiyama_file_system, 
                      generate_fijiyama_stacks, openfiji, remove_dir, create_transformations_folders, move_transformation,
                      create_dir, correct_path, read_img_with_resolution, get_file_names)
