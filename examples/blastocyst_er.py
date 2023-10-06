@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import subprocess
 import sys
 sys.path.append('/home/pablo/Desktop/PhD/projects/pyjiyama/src')
 from pyjiyama import (square_stack4D, centroid_correction_3d_based_on_mid_plane, generate_fijiyama_file_system, 
@@ -16,8 +17,6 @@ for file in files:
     if ".tif" not in file:
         files.remove(file) 
         
-embcode = "20230607_CAG_H2B_GFP_16_cells_stack2_part2"
-
 # sort filename 
 current_order = []
 for filename in files:
@@ -44,7 +43,7 @@ t, z, x, y = np.where(IMGS > 255)
 IMGS[t, z, x, y] = 255
 IMGS = IMGS.astype("uint8")
 
-### PREPROCESSING ###
+### CENTROID CORRECTION ###
 # Run centroid correction prior to Fijiyama registration to improve performance
 IMGS_corrected, extra_IMGS_corrected = centroid_correction_3d_based_on_mid_plane(IMGS, extra_IMGS=[])
 del IMGS
@@ -100,6 +99,8 @@ IMGS_chs = np.array([IMGS_corrected])
 registered_IMGS_chs = np.zeros_like(np.array(IMGS_chs))
 
 pth_beanshell = "/opt/Fiji.app/beanshell/bsh-2.0b4.jar"
+
+from pyjiyama import __file__ as pyjiyama_path
 for ch, IMGS_ch in enumerate(IMGS_chs):
     path_movies_reg_embcode_ch = create_dir(
         path_movies_reg_embcode, "%d" % ch, return_path=True, rem=True
@@ -132,13 +133,13 @@ for ch, IMGS_ch in enumerate(IMGS_chs):
         the_file.write(text_to_write)
 
     # Run Beanshell script
+    idx = pyjiyama_path.rfind('/')
     pth_beanshell_script = (
         correct_path(
-            "/home/pablo/Desktop/PhD/projects/pyjiyama/src/pyjiyama/"
+            pyjiyama_path[:idx]
         )
         + "utils/apply_transformation.bsh"
     )
-    import subprocess
 
     subprocess.run(
         [path_to_fiji, "--headless", pth_beanshell_script]

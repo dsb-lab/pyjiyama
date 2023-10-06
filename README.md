@@ -17,6 +17,7 @@ Let's start by importing the packages
 ```python
 import numpy as np
 import os
+import subprocess
 import sys
 from pyjiyama import (square_stack4D, centroid_correction_3d_based_on_mid_plane, generate_fijiyama_file_system, 
                      generate_fijiyama_stacks, openfiji, remove_dir, create_transformations_folders, move_transformation,
@@ -28,11 +29,12 @@ Now define your path to the data in the following way and the code you want to g
 
 ```python
 home = os.path.expanduser("~")
-path_data = "path/to/data/"
+path_data = "/path/to/data/"
 embcode = "my_embryo_name"
 ```
+#### DISCLAIMER: These first cells are only for the case in which you have your data as individual time files.
 
-Now load the file list in that folder
+Load the file list in that folder
 
 
 ```python
@@ -56,7 +58,6 @@ Usually these files are not properly ordered so that's the next step.
 # sort filename 
 current_order = []
 for filename in files:
-    if ".tif" not in filename: continue
     idx = filename.find(".tif")
     filecode=int(filename[:idx])
     current_order.append(filecode)
@@ -76,11 +77,13 @@ for filename in files:
 
 _IMGS = np.array(_IMGS)
 ```
+#### DISCLAIMER: In case you have your stack as a 4D stack already, uncomment the first line of the next cell and start directly here.
 
 Square stacks so that `x` and `y` dimensions are equal and remove non-squared stack to free some memory
 
 
 ```python
+# _IMGS, xyres, zres = read_img_with_resolution(path_data + filename)
 IMGS = square_stack4D(_IMGS)
 del _IMGS
 ```
@@ -201,10 +204,12 @@ We can now loop for each channel and apply the corresponding transformations to 
 pth_beanshell = "/opt/Fiji.app/beanshell/bsh-2.0b4.jar"
 ```
 
-We can now apply the transformations now. NEED TO CHANGE THE PATH TO THE BEANSHELL SCRIPT 
+We can now apply the transformations now. The first line in the cell finds your pyjiyama installation to locate the beanshell script used for applying the transformations. 
 
 
 ```python
+from pyjiyama import __file__ as pyjiyama_path
+
 for ch, IMGS_ch in enumerate(IMGS_chs):
     path_movies_reg_embcode_ch = create_dir(
         path_movies_reg_embcode, "%d" % ch, return_path=True, rem=True
@@ -237,13 +242,13 @@ for ch, IMGS_ch in enumerate(IMGS_chs):
         the_file.write(text_to_write)
 
     # Run Beanshell script
+    idx = pyjiyama_path.rfind('/')
     pth_beanshell_script = (
         correct_path(
-            "/home/pablo/Desktop/PhD/projects/pyjiyama/src/pyjiyama/"
+            pyjiyama_path[:idx]
         )
         + "utils/apply_transformation.bsh"
     )
-    import subprocess
 
     subprocess.run(
         [path_to_fiji, "--headless", pth_beanshell_script]
