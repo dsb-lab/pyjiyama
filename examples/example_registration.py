@@ -7,15 +7,16 @@ from pyjiyama import (square_stack4D, centroid_correction_3d_based_on_mid_plane,
                      create_dir, correct_path, read_img_with_resolution, get_file_names)
 
 home = os.path.expanduser("~")
-path_parent = home + "/Desktop/PhD/projects/Data/blastocysts/Lana/"
-path_data = path_parent + "20230607_CAG_H2B_GFP_16_cells/stack_2_channel_0_obj_bottom/crop/volumes/"
+path_data = home + "/Desktop/PhD/projects/Data/blastocysts/Lana/20230607_CAG_H2B_GFP_16_cells/stack_2_channel_0_obj_bottom/crop/volumes/"
+embcode = "20230607_CAG_H2B_GFP_16_cells_stack2_part2"
 
 files = get_file_names(path_data)
+
 for file in files: 
     if ".tif" not in file:
         files.remove(file) 
         
-embcode = "20230607_CAG_H2B_GFP_16_cells_stack2"
+embcode = "20230607_CAG_H2B_GFP_16_cells_stack2_part2"
 
 # sort filename 
 current_order = []
@@ -23,27 +24,20 @@ for filename in files:
     if ".tif" not in filename: continue
     idx = filename.find(".tif")
     filecode=int(filename[:idx])
-    print(filecode)
     current_order.append(filecode)
     
 idxs_sort = np.argsort(current_order) 
 files = [files[idx] for idx in idxs_sort]
 
-
-for filename in files[:50]:
+_IMGS = []
+for filename in files[50:]:
     _IMG, xyres, zres = read_img_with_resolution(path_data + filename)
     _IMGS.append(_IMG[0])
 
 _IMGS = np.array(_IMGS)
+
 IMGS = square_stack4D(_IMGS)
 del _IMGS
-
-# for i in range(1, 10):
-#     file, embcode, files = get_file_embcode(path_data, "00%d.tif" % i, returnfiles=True)
-
-#     _IMGS, xyres, zres = read_img_with_resolution(path_data + file)
-#     _IMGS = _IMGS[0:2, :, 1:-2, :]
-#     IMGS = np.append(IMGS, _IMGS, axis=0)
 
 # Combine channels into single stack
 t, z, x, y = np.where(IMGS > 255)
@@ -52,12 +46,10 @@ IMGS = IMGS.astype("uint8")
 
 ### PREPROCESSING ###
 # Run centroid correction prior to Fijiyama registration to improve performance
-IMGS_corrected = centroid_correction_3d_based_on_mid_plane(IMGS)
+IMGS_corrected, extra_IMGS_corrected = centroid_correction_3d_based_on_mid_plane(IMGS, extra_IMGS=[])
 del IMGS
-# Check whether correction is good enough
-# err = test_mid_plane_centroid_correction(IMGS_corrected, 0, pixel_tolerance=1)
-
 IMGS_corrected = IMGS_corrected.astype("uint8")
+extra_IMGS_corrected = np.array(extra_IMGS_corrected).astype("uint8")
 
 ### FJIYAMA REGISTRATION ###
 # Create Fijiyama file system (input and output folders)
@@ -75,7 +67,8 @@ generate_fijiyama_stacks(
 )
 
 # Open Imagej to run fijiyama registration
-openfiji()
+path_to_fiji = "/opt/Fiji.app/ImageJ-linux64"
+openfiji(path_to_fiji=path_to_fiji)
 
 # Remove stacks used for registration
 remove_dir(path_registered)
@@ -106,6 +99,7 @@ IMGS_chs = np.array([IMGS_corrected])
 # Expand channels
 registered_IMGS_chs = np.zeros_like(np.array(IMGS_chs))
 
+pth_beanshell = "/opt/Fiji.app/beanshell/bsh-2.0b4.jar"
 for ch, IMGS_ch in enumerate(IMGS_chs):
     path_movies_reg_embcode_ch = create_dir(
         path_movies_reg_embcode, "%d" % ch, return_path=True, rem=True
@@ -124,7 +118,6 @@ for ch, IMGS_ch in enumerate(IMGS_chs):
     )
 
     # Define where you have the beanshell class to be called from beanshell
-    pth_beanshell = "/opt/Fiji.app/beanshell/bsh-2.0b4.jar"
     text_to_write = "\n".join(
         [
             pth_beanshell,
@@ -148,7 +141,7 @@ for ch, IMGS_ch in enumerate(IMGS_chs):
     import subprocess
 
     subprocess.run(
-        ["/opt/Fiji.app/ImageJ-linux64", "--headless", pth_beanshell_script]
+        [path_to_fiji, "--headless", pth_beanshell_script]
     )  # , stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     remove_dir(path_movies_reg_embcode_ch)
@@ -159,7 +152,6 @@ for ch, IMGS_ch in enumerate(IMGS_chs):
     for _t, tfile in enumerate(tfiles):
         registered_IMGS_chs[ch]
         t = int(tfile.split(".")[0].split("t")[-1]) - 1
-        print(t)
         IMG_t, xyres, zres = read_img_with_resolution(
             correct_path(path_movies_reg_embcode_ch_reg) + tfile,
             channel=None,
@@ -167,6 +159,7 @@ for ch, IMGS_ch in enumerate(IMGS_chs):
         registered_IMGS_chs[ch][t] = IMG_t
 
 registered_IMGS_chs = registered_IMGS_chs.astype("uint8")
+
 
 # Reorder stack from CTZXY to the imagej structure TZCXY
 sh = registered_IMGS_chs.shape
