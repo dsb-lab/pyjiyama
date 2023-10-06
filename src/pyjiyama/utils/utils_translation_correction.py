@@ -52,8 +52,9 @@ def centroid_correction_2d(img, aff_trans):
     return new_img
 
 
-def centroid_correction_3d_based_on_mid_plane(_IMGS):
+def centroid_correction_3d_based_on_mid_plane(_IMGS, extra_IMGS=[]):
     IMGS = deepcopy(_IMGS)
+    extra_IMGS_corrected = [deepcopy(extraimg) for extraimg in extra_IMGS]
     for t in range(IMGS.shape[0] - 1):
         mid_slice = np.floor(IMGS.shape[1] / 2).astype("int32")
         img_mid1 = IMGS[t, mid_slice]
@@ -64,7 +65,11 @@ def centroid_correction_3d_based_on_mid_plane(_IMGS):
         for z in range(IMGS.shape[1]):
             img = IMGS[t + 1, z]
             IMGS[t + 1, z] = centroid_correction_2d(img, aff_trans)
-    return IMGS
+            for ch in range(len(extra_IMGS_corrected)):
+                imgch = extra_IMGS_corrected[ch][t + 1, z]
+                extra_IMGS_corrected[ch][t + 1, z] = centroid_correction_2d(img, aff_trans)
+
+    return IMGS, extra_IMGS_corrected
 
 
 def test_mid_plane_centroid_correction(IMGS, t, pixel_tolerance=1):

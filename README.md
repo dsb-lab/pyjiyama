@@ -7,4 +7,4 @@ Helper python package for 3D image registration using the Image J package Fijiya
 
 ## Usage
 
-Examples of ussage on `examples` folder
+Examples of usage on `examples` folder
