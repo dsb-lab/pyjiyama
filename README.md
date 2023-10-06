@@ -16,7 +16,6 @@ Let's start by importing the packages
 import numpy as np
 import os
 import sys
-sys.path.append('/home/pablo/Desktop/PhD/projects/pyjiyama/src')
 from pyjiyama import (square_stack4D, centroid_correction_3d_based_on_mid_plane, generate_fijiyama_file_system, 
                      generate_fijiyama_stacks, openfiji, remove_dir, create_transformations_folders, move_transformation,
                      create_dir, correct_path, read_img_with_resolution, get_file_names)
@@ -27,8 +26,8 @@ Now define your path to the data in the following way and the code you want to g
 
 ```python
 home = os.path.expanduser("~")
-path_data = home + "/Desktop/PhD/projects/Data/blastocysts/Lana/20230607_CAG_H2B_GFP_16_cells/stack_2_channel_0_obj_bottom/crop/volumes/"
-embcode = "20230607_CAG_H2B_GFP_16_cells_stack2_part2"
+path_data = "path/to/data/"
+embcode = "my_embryo_name"
 ```
 
 Now load the file list in that folder
@@ -69,7 +68,7 @@ Now create 4D stack of the files you want to register
 
 ```python
 _IMGS = []
-for filename in files[50:52]:
+for filename in files:
     _IMG, xyres, zres = read_img_with_resolution(path_data + filename)
     _IMGS.append(_IMG[0])
 
