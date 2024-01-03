@@ -191,3 +191,59 @@ def square_stack4D(hyperstack):
     for t in range(times):
         new_hyperstack[t] = square_stack3D(hyperstack[t])
     return new_hyperstack
+
+
+def pad_image_and_square_array2D(IMG, required_size=None):
+    """Squares and pads input image
+    
+    Parameters
+    ----------
+    IMG : ndarray
+        2D ndarray with the unsquared, unpadded image
+    required_size: None or int
+        if None, pads and squares to max dim of IMG
+        if int, pads both dimensions to that number
+
+    Returns
+    -------
+    IMG_padded:  ndarray
+        2d ndarray with the image squared and padded
+    """
+    
+    # indexed to be used for image reconstruction
+    sh = IMG.shape
+    if required_size is None:
+        required_size=max(*sh)
+    ishdiff = required_size-sh[0]
+    top_ishdiff = np.int32(np.ceil(ishdiff/2))
+    bot_ishdiff = np.int32(np.floor(ishdiff/2))
+    jshdiff = required_size-sh[1]
+    lef_jshdiff = np.int32(np.ceil(jshdiff/2))
+    rig_jshdiff = np.int32(np.floor(jshdiff/2))
+    
+    IMG_padded = np.zeros((required_size, required_size))
+    IMG_padded[top_ishdiff:-bot_ishdiff, +lef_jshdiff:-rig_jshdiff] = IMG
+    return IMG_padded
+
+
+def pad_image_and_square_array3D(stack, required_size_xy=None, required_size_z=None):
+    slices = stack.shape[0]
+    if required_size_z is None:
+        new_slices=slices
+    else:
+        new_slices=required_size_z
+    testimg = pad_image_and_square_array2D(stack[0], required_size=required_size_xy)
+    new_stack = np.zeros((new_slices, *testimg.shape), dtype="uint8")
+    offset = np.floor((new_slices-slices)/2).astype('int32')
+    for z in range(slices):
+        new_stack[z+offset] = pad_image_and_square_array2D(stack[z], required_size=required_size_xy)
+    return new_stack
+
+
+def pad_image_and_square_array4D(hyperstack, required_size_xy=None, required_size_z=None):
+    times = hyperstack.shape[0]
+    teststack = pad_image_and_square_array3D(hyperstack[0], required_size_xy=required_size_xy, required_size_z=required_size_z)
+    new_hyperstack = np.zeros((times, *teststack.shape), dtype="uint8")
+    for t in range(times):
+        new_hyperstack[t] = pad_image_and_square_array3D(hyperstack[t], required_size_xy=required_size_xy, required_size_z=required_size_z)
+    return new_hyperstack
