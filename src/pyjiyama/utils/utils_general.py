@@ -9,6 +9,46 @@ def get_file_names(path_data):
     files = os.listdir(path_data)
     return files
 
+def get_ordered_tif_files(path_data):
+    total_files = get_file_names(correct_path(path_data))
+    for i in range(len(total_files)).__reversed__(): 
+        file = total_files[i]
+        if ".tif" not in file:
+            _ = total_files.pop(i) 
+            
+    # # sort filename 
+    # current_order = []
+    # for filename in total_files:
+    #     if ".tif" not in filename: continue
+    #     idx = filename.find(".tif")
+    #     filecode=int(filename[idx-4:idx])
+    #     current_order.append(filecode)
+        
+    # idxs_sort = np.argsort(currenWt_order) 
+    # total_files = [total_files[idx] for idx in idxs_sort]
+
+    # import os
+    # offset = 0
+    # for i, file in enumerate(total_files):
+    #     os.rename(correct_path(path_data+embcode)+file, correct_path(path_data+embcode)+"{}.tif".format(i+offset))
+
+    # sort filename 
+
+    for i in range(len(total_files)).__reversed__(): 
+        file = total_files[i]
+        if ".tif" not in file:
+            total_files.pop(i) 
+            
+    current_order = []
+    for filename in total_files:
+        if ".tif" not in filename: continue
+        idx = filename.find(".tif")
+        filecode=int(filename[:idx])
+        current_order.append(filecode)
+        
+    idxs_sort = np.argsort(current_order) 
+    total_files = [total_files[idx] for idx in idxs_sort]
+    return total_files
 
 def get_file_embcode(path_data, f, returnfiles=False):
     """
@@ -117,6 +157,18 @@ def read_img_with_resolution(path_to_file, channel=None, stack=True):
             xyres = (xres, yres)
     return IMGS, xyres, zres
 
+def get_max_xy_z_resolutions(path_data, files, file_step=30):
+    maxsize_xy=0
+    maxsize_z =0
+    for file in files[::file_step]:
+        _IMG, xyres, zres = read_img_with_resolution(correct_path(path_data) + file)
+        max_dim = np.max(_IMG.shape[-2:])
+        zdim = _IMG.shape[1]
+        maxsize_xy = max(maxsize_xy, max_dim)
+        maxsize_z = max(maxsize_z, zdim)
+
+    return maxsize_xy, maxsize_z
+
 
 def remove_dir(path, dir=""):
     try:
@@ -158,7 +210,7 @@ def correct_path(path):
 def square_stack2D(img):
     x, y = img.shape
     if x == y:
-        return
+        return img
 
     x, y = img.shape
 
@@ -193,7 +245,7 @@ def square_stack4D(hyperstack):
     return new_hyperstack
 
 
-def pad_image_and_square_array2D(IMG, required_size=None):
+def pad_image_and_square_array2D(IMG, required_size=None, pad_val=0):
     """Squares and pads input image
     
     Parameters
@@ -221,7 +273,7 @@ def pad_image_and_square_array2D(IMG, required_size=None):
     lef_jshdiff = np.int32(np.ceil(jshdiff/2))
     rig_jshdiff = np.int32(np.floor(jshdiff/2))
     
-    IMG_padded = np.zeros((required_size, required_size))
+    IMG_padded = np.ones((required_size, required_size))*pad_val
     IMG_padded[top_ishdiff:-bot_ishdiff, +lef_jshdiff:-rig_jshdiff] = IMG
     return IMG_padded
 
@@ -240,10 +292,10 @@ def pad_image_and_square_array3D(stack, required_size_xy=None, required_size_z=N
     return new_stack
 
 
-def pad_image_and_square_array4D(hyperstack, required_size_xy=None, required_size_z=None):
+def pad_image_and_square_array4D(hyperstack, required_size_xy=None, required_size_z=None, pad_val=0):
     times = hyperstack.shape[0]
     teststack = pad_image_and_square_array3D(hyperstack[0], required_size_xy=required_size_xy, required_size_z=required_size_z)
-    new_hyperstack = np.zeros((times, *teststack.shape), dtype="uint8")
+    new_hyperstack = np.ones((times, *teststack.shape), dtype="uint8")*np.uint8(np.rint(pad_val))
     for t in range(times):
         new_hyperstack[t] = pad_image_and_square_array3D(hyperstack[t], required_size_xy=required_size_xy, required_size_z=required_size_z)
     return new_hyperstack
