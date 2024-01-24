@@ -278,24 +278,24 @@ def pad_image_and_square_array2D(IMG, required_size=None, pad_val=0):
     return IMG_padded
 
 
-def pad_image_and_square_array3D(stack, required_size_xy=None, required_size_z=None):
+def pad_image_and_square_array3D(stack, required_size_xy=None, required_size_z=None, pad_val=0):
     slices = stack.shape[0]
     if required_size_z is None:
         new_slices=slices
     else:
         new_slices=required_size_z
-    testimg = pad_image_and_square_array2D(stack[0], required_size=required_size_xy)
+    testimg = pad_image_and_square_array2D(stack[0], required_size=required_size_xy, pad_val=pad_val)
     new_stack = np.zeros((new_slices, *testimg.shape), dtype="uint8")
     offset = np.floor((new_slices-slices)/2).astype('int32')
     for z in range(slices):
-        new_stack[z+offset] = pad_image_and_square_array2D(stack[z], required_size=required_size_xy)
+        new_stack[z+offset] = pad_image_and_square_array2D(stack[z], required_size=required_size_xy,pad_val=pad_val)
     return new_stack
 
 
 def pad_image_and_square_array4D(hyperstack, required_size_xy=None, required_size_z=None, pad_val=0):
     times = hyperstack.shape[0]
-    teststack = pad_image_and_square_array3D(hyperstack[0], required_size_xy=required_size_xy, required_size_z=required_size_z)
+    teststack = pad_image_and_square_array3D(hyperstack[0], required_size_xy=required_size_xy, required_size_z=required_size_z, pad_val=pad_val)
     new_hyperstack = np.ones((times, *teststack.shape), dtype="uint8")*np.uint8(np.rint(pad_val))
     for t in range(times):
-        new_hyperstack[t] = pad_image_and_square_array3D(hyperstack[t], required_size_xy=required_size_xy, required_size_z=required_size_z)
+        new_hyperstack[t] = pad_image_and_square_array3D(hyperstack[t], required_size_xy=required_size_xy, required_size_z=required_size_z,pad_val=pad_val)
     return new_hyperstack
