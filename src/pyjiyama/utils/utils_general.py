@@ -134,27 +134,31 @@ def read_img_with_resolution(path_to_file, channel=None, stack=True):
         imagej_metadata = tif.imagej_metadata
         tags = tif.pages[0].tags
         # parse X, Y resolution
-        try:
-            npix, unit = tags["XResolution"].value
-            xres = unit / npix
-        except KeyError:
-            xres = None
-
-        try:
-            npix, unit = tags["YResolution"].value
-            yres = unit / npix
-        except KeyError:
-            yres = None
-
-        try:
-            zres = imagej_metadata["spacing"]
-        except KeyError:
-            zres = None
-
-        if xres == yres:
-            xyres = xres
+        if imagej_metadata is None: 
+            xyres = 1
+            zres = 1
         else:
-            xyres = (xres, yres)
+            try:
+                npix, unit = tags["XResolution"].value
+                xres = unit / npix
+            except KeyError:
+                xres = None
+
+            try:
+                npix, unit = tags["YResolution"].value
+                yres = unit / npix
+            except KeyError:
+                yres = None
+
+            try:
+                zres = imagej_metadata["spacing"]
+            except KeyError:
+                zres = None
+
+            if xres == yres:
+                xyres = xres
+            else:
+                xyres = (xres, yres)
     return IMGS, xyres, zres
 
 def get_max_xy_z_resolutions(path_data, files, file_step=30):
@@ -268,13 +272,16 @@ def pad_image_and_square_array2D(IMG, required_size=None, pad_val=0):
         required_size=max(*sh)
     ishdiff = required_size-sh[0]
     top_ishdiff = np.int32(np.ceil(ishdiff/2))
-    bot_ishdiff = np.int32(np.floor(ishdiff/2))
+    bot_ishdiff = -np.int32(np.floor(ishdiff/2))
+    if bot_ishdiff==0:
+        bot_ishdiff=None
     jshdiff = required_size-sh[1]
     lef_jshdiff = np.int32(np.ceil(jshdiff/2))
-    rig_jshdiff = np.int32(np.floor(jshdiff/2))
-    
+    rig_jshdiff = -np.int32(np.floor(jshdiff/2))
+    if rig_jshdiff==0:
+        rig_jshdiff=None
     IMG_padded = np.ones((required_size, required_size))*pad_val
-    IMG_padded[top_ishdiff:-bot_ishdiff, +lef_jshdiff:-rig_jshdiff] = IMG
+    IMG_padded[top_ishdiff:bot_ishdiff, lef_jshdiff:rig_jshdiff] = IMG
     return IMG_padded
 
 
