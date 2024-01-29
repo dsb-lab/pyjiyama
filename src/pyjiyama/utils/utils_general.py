@@ -183,7 +183,7 @@ def create_dir(path, dir="", rem=False, return_path=False):
     try:
         os.mkdir(path + dir)
         if return_path:
-            return path + dir
+            return correct_path(path + dir)
         else:
             return
     except FileExistsError:
@@ -194,7 +194,7 @@ def create_dir(path, dir="", rem=False, return_path=False):
             pass
 
         if return_path:
-            return path + dir
+            return correct_path(path + dir)
         else:
             return
 
