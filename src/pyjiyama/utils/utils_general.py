@@ -255,7 +255,9 @@ def pad_image_and_square_array2D(IMG, required_size=None, pad_val=0):
     required_size: None or int
         if None, pads and squares to max dim of IMG
         if int, pads both dimensions to that number
-
+    pad_val: int
+        value used for padding
+        
     Returns
     -------
     IMG_padded:  ndarray
@@ -278,24 +280,36 @@ def pad_image_and_square_array2D(IMG, required_size=None, pad_val=0):
     return IMG_padded
 
 
-def pad_image_and_square_array3D(stack, required_size_xy=None, required_size_z=None):
+def pad_image_and_square_array3D(stack, required_size_xy=None, required_size_z=None, pad_val=0):
+    """Squares and pads input image in 3D
+    
+    Parameters
+    ----------
+    stack : ndarray
+        3D ndarray with the unsquared, unpadded image
+    required_size_xy: None or int
+        if None, pads and squares to max xy dim of IMG
+        if int, pads both x and y dimensions to that number
+    required_size_z: None or int
+        if None, does not pad on z dim
+        if int, pads stack whole xy planes until given value starting from the top
+    pad_val: int
+        value used for padding
+
+    Returns
+    -------
+    new_stack:  ndarray
+        3d ndarray with the image squared and padded
+    """
     slices = stack.shape[0]
     if required_size_z is None:
         new_slices=slices
     else:
         new_slices=required_size_z
-    testimg = pad_image_and_square_array2D(stack[0], required_size=required_size_xy)
-    new_stack = np.zeros((new_slices, *testimg.shape), dtype="uint8")
+    pad_val = np.uint8(np.rint(pad_val))
+    testimg = pad_image_and_square_array2D(stack[0], required_size=required_size_xy, pad_val=pad_val)
+    new_stack = np.ones((new_slices, *testimg.shape), dtype="uint8")*pad_val
     offset = np.floor((new_slices-slices)/2).astype('int32')
     for z in range(slices):
-        new_stack[z+offset] = pad_image_and_square_array2D(stack[z], required_size=required_size_xy)
+        new_stack[z+offset] = pad_image_and_square_array2D(stack[z], required_size=required_size_xy, pad_val=pad_val)
     return new_stack
-
-
-def pad_image_and_square_array4D(hyperstack, required_size_xy=None, required_size_z=None, pad_val=0):
-    times = hyperstack.shape[0]
-    teststack = pad_image_and_square_array3D(hyperstack[0], required_size_xy=required_size_xy, required_size_z=required_size_z)
-    new_hyperstack = np.ones((times, *teststack.shape), dtype="uint8")*np.uint8(np.rint(pad_val))
-    for t in range(times):
-        new_hyperstack[t] = pad_image_and_square_array3D(hyperstack[t], required_size_xy=required_size_xy, required_size_z=required_size_z)
-    return new_hyperstack
