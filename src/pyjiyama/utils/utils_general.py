@@ -320,3 +320,177 @@ def pad_image_and_square_array3D(stack, required_size_xy=None, required_size_z=N
     for z in range(slices):
         new_stack[z+offset] = pad_image_and_square_array2D(stack[z], required_size=required_size_xy, pad_val=pad_val)
     return new_stack
+
+
+
+import matplotlib.pyplot as plt
+
+from copy import copy, deepcopy
+
+import numpy as np
+from matplotlib.transforms import TransformedPatchPath
+from matplotlib.widgets import LassoSelector, Slider
+
+
+class Slider_t(Slider):
+    def __init__(self, *args, **kwargs):
+        Slider.__init__(self, *args, **kwargs)
+        ax = kwargs["ax"]
+        vmin = kwargs["valmin"]
+        vmax = kwargs["valmax"]
+        vstp = kwargs["valstep"]
+        colr = kwargs["initcolor"]
+        for v in range(vmin + vstp, vmax, vstp):
+            vline = ax.axvline(
+                v, 0, 1, color=colr, lw=1, clip_path=TransformedPatchPath(self.track)
+            )
+
+class Slider_z(Slider):
+    def __init__(self, *args, **kwargs):
+        Slider.__init__(self, *args, **kwargs)
+        ax = kwargs["ax"]
+        vmin = kwargs["valmin"]
+        vmax = kwargs["valmax"]
+        vstp = kwargs["valstep"]
+        colr = kwargs["initcolor"]
+        for v in range(vmin + vstp, vmax, vstp):
+            vline = ax.axvline(
+                v, 0, 1, color=colr, lw=1, clip_path=TransformedPatchPath(self.track)
+            )
+
+class PyjiyamaPlotter(object):
+    def __init__(self, IMGS):
+        
+        fig, ax = plt.subplots(figsize=(10,10))
+        self.fig = fig
+        self.ax = ax
+        
+        self.IMGS = IMGS
+        self.t = 1
+        self.z = 1
+        self.times = len(self.IMGS)
+        self.slices = self.IMGS[0].shape[0]
+        
+        self.ctrl_press = self.fig.canvas.mpl_connect(
+            "key_press_event", self.on_key_press
+        )
+        self.ctrl_release = self.fig.canvas.mpl_connect(
+            "key_release_event", self.on_key_release
+        )
+        
+        self.ctrl_is_held = False
+
+    def on_key_press(self, event):
+        if event.key == "control":
+            self.ctrl_is_held = True
+
+    def on_key_release(self, event):
+        if event.key == "control":
+            self.ctrl_is_held = False
+            
+    def update_slider_t(self, t):
+        print(t)
+        self.t = t
+        self.replot_axis()
+        self.update()
+
+    def update_slider_z(self, z):
+        self.z = z
+        self.replot_axis()
+        self.update()
+
+    def time_scroll(self, event):
+        if event.button == "up":
+            self.t = self.t + 1
+        elif event.button == "down":
+            self.t = self.t - 1
+        
+        self.t = max(self.t, 1)
+        self.t = min(self.t, self.times)
+        self.set_val_t_slider(self.t)
+
+    def slice_scroll(self, event):
+        if event.button == "up":
+            self.z = self.z - 1
+        elif event.button == "down":
+            self.z = self.z + 1
+
+        self.z = max(self.z, 1)
+        self.z = min(self.z, self.slices)
+        self.set_val_z_slider(self.z)
+
+    def onscroll(self, event):
+        if self.ctrl_is_held:
+            self.time_scroll(event)
+        else:
+            self.slice_scroll(event)
+
+    def update(self):
+        self.fig.canvas.draw_idle()
+
+
+    def plot(
+        self,
+    ):
+        
+        # Make a horizontal slider to control the time.
+        axslide = self.fig.add_axes([0.10, 0.01, 0.75, 0.03])
+
+        sliderstr2 = "/%d)" % (self.times)
+        valfmt = "%d" + sliderstr2
+
+        time_slider = Slider_t(
+            ax=axslide,
+            label="time",
+            initcolor="r",
+            valmin=1,
+            valmax=self.times,
+            valinit=1,
+            valstep=1,
+            valfmt=valfmt,
+            track_color=[0.8, 0.8, 0, 0.5],
+            facecolor=[0.8, 0.8, 0, 1.0],
+        )
+
+        # Make a horizontal slider to control the zs.
+        axslide = self.fig.add_axes([0.10, 0.04, 0.75, 0.03])
+        sliderstr = "/%d" % (self.slices)
+        zslide_val_fmt ="%d" + sliderstr
+        z_slider = Slider_z(
+            ax=axslide,
+            label="z slice",
+            initcolor="r",
+            valmin=1,
+            valmax=self.slices,
+            valinit=1,
+            valstep=1,
+            valfmt=zslide_val_fmt,
+            track_color=[0, 0.7, 0, 0.5],
+            facecolor=[0, 0.7, 0, 1.0],
+        )
+
+        # Point to sliders
+        time_slider.on_changed(self.update_slider_t)
+        self.set_val_t_slider = time_slider.set_val
+
+        z_slider.on_changed(self.update_slider_z)
+        self.set_val_z_slider = z_slider.set_val
+        
+        scl = self.fig.canvas.mpl_connect("scroll_event", self.onscroll)
+
+        self.ax.axis(False)
+        _ = self.ax.set_xticks([])
+        _ = self.ax.set_yticks([])
+        
+        t = 0
+        z = 0
+        img = self.IMGS[t][z, :, :]
+        self.imshow = self.ax.imshow(img, vmin=0, vmax=255)
+
+        plt.subplots_adjust(bottom=0.075)
+        plt.show()
+
+    def replot_axis(self):
+        img = self.IMGS[self.t-1][self.z-1, :, :]
+        self.imshow.set_array(img)
+
