@@ -35,7 +35,7 @@ def generate_fijiyama_stacks(
     path_to_save, IMGS, xyres, zres, file_format="t%d.tif", rem=True
 ):
     pth = correct_path(path_to_save)
-    ts, zs, xs, ys = IMGS.shape
+    ts = len(IMGS)
     list_of_files = os.listdir(pth)
     if len(list_of_files) != 0:
         if rem:
@@ -43,6 +43,7 @@ def generate_fijiyama_stacks(
             create_dir(pth)
 
     for t in range(ts):
+        zs, xs, ys = IMGS[t].shape
         IMG = IMGS[t].reshape((1, zs, xs, ys))
         fullpath = pth + file_format % (t + 1)
         mdata = {"axes": "TZYX", "spacing": zres, "unit": "um"}

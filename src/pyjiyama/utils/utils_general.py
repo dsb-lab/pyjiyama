@@ -358,6 +358,24 @@ class Slider_z(Slider):
                 v, 0, 1, color=colr, lw=1, clip_path=TransformedPatchPath(self.track)
             )
 
+from matplotlib.widgets import RectangleSelector
+class MyRectangleSelector(RectangleSelector):
+    def __init__(self, *args, **kwargs):
+        sh = kwargs.pop('shape')
+        self.fig = kwargs.pop('fig')
+        self.tmp_xlims = [0, sh[-1]]
+        self.tmp_ylims = [0, sh[-2]]
+        args = (args[0], self.selection_callback)
+        RectangleSelector.__init__(self, *args, **kwargs)
+
+    def selection_callback(self, eclick, erelease): 
+        x1, y1 = eclick.xdata, eclick.ydata
+        x2, y2 = erelease.xdata, erelease.ydata
+        self.tmp_xlims[0] = min(x1, x2)
+        self.tmp_xlims[1] = max(x1, x2)
+        self.tmp_ylims[0] = min(y1, y2)
+        self.tmp_ylims[1] = max(y1, y2)
+        
 class PyjiyamaPlotter(object):
     def __init__(self, IMGS):
         
@@ -383,13 +401,16 @@ class PyjiyamaPlotter(object):
     def on_key_press(self, event):
         if event.key == "control":
             self.ctrl_is_held = True
+        elif event.key == 'enter':
+            self.xlims = np.rint(self.RS.tmp_xlims).astype('int32')
+            self.ylims = np.rint(self.RS.tmp_ylims).astype('int32')
+            plt.close()
 
     def on_key_release(self, event):
         if event.key == "control":
             self.ctrl_is_held = False
-            
+    
     def update_slider_t(self, t):
-        print(t)
         self.t = t
         self.replot_axis()
         self.update()
@@ -487,6 +508,18 @@ class PyjiyamaPlotter(object):
         img = self.IMGS[t][z, :, :]
         self.imshow = self.ax.imshow(img, vmin=0, vmax=255)
 
+        self.zlimits=[0, self.slices-1]
+        ZPicker(self.ax, self.fig.canvas, self.zpicker_callback)
+        self.RS = MyRectangleSelector(
+            self.ax,
+            useblit=True,
+            button=[3], 
+            minspanx=5, minspany=5,
+            spancoords='pixels',
+            interactive=True,
+            fig = self.fig,
+            shape = img.shape
+            )
         plt.subplots_adjust(bottom=0.075)
         plt.show()
 
@@ -494,3 +527,26 @@ class PyjiyamaPlotter(object):
         img = self.IMGS[self.t-1][self.z-1, :, :]
         self.imshow.set_array(img)
 
+    def zpicker_callback(self):
+        if self.ctrl_is_held:
+            self.zlimits[1] = self.z
+        else:
+            self.zlimits[0] = self.z
+        
+        print("current z limits", self.zlimits)
+        
+class ZPicker(object):
+    def __init__(self, ax, canvas, callback):
+        self.ax = ax
+        self.cid = canvas.mpl_connect("button_press_event", self)
+        self.canvas = canvas
+        self.callback = callback
+        
+    def __call__(self, event):
+        if event.dblclick == True:
+            if event.button == 1:
+                if event.inaxes == self.ax:
+                    self.callback()
+
+    def stopit(self):
+        self.canvas.mpl_disconnect(self.cid)
