@@ -61,24 +61,23 @@ def openfiji(path_to_fiji="/opt/Fiji.app/ImageJ-linux64"):
 
 
 def create_transformations_folders(
-    path_movies, embcode, trans_folder="transformations"
+    path_movies, trans_folder="transformations"
 ):
     path_transformations = create_dir(path_movies, trans_folder, return_path=True)
-    path_trans_embcode = create_dir(path_transformations, embcode, return_path=True)
-    path_trans_emb_global = create_dir(path_trans_embcode, "global", return_path=True)
-    path_trans_emb_steps = create_dir(path_trans_embcode, "steps", return_path=True)
+    path_trans_global = create_dir(path_transformations, "global", return_path=True)
+    path_trans_steps = create_dir(path_transformations, "steps", return_path=True)
 
-    return path_trans_emb_global, path_trans_emb_steps
+    return path_trans_global, path_trans_steps
 
 
-def move_transformation(path_output, path_trans_emb_global, path_trans_emb_steps):
+def move_transformation(path_output, path_trans_global, path_trans_steps):
     pth_to_output_exported_data = correct_path(path_output) + "Exported_data"
     try:
         ex_data_files = os.listdir(pth_to_output_exported_data)
         for file in ex_data_files:
             if "global" in file:
                 file_path = correct_path(pth_to_output_exported_data) + file
-                new_file_path = correct_path(path_trans_emb_global) + file
+                new_file_path = correct_path(path_trans_global) + file
                 shutil.move(file_path, new_file_path)
     except:
         pass
@@ -88,7 +87,13 @@ def move_transformation(path_output, path_trans_emb_global, path_trans_emb_steps
         for file in rf_data_files:
             if "Transform_Step" in file:
                 file_path = correct_path(pth_to_output_registration_files) + file
-                new_file_path = correct_path(path_trans_emb_steps) + file
+                new_file_path = correct_path(path_trans_steps) + file
                 shutil.move(file_path, new_file_path)
     except:
         pass
+
+def get_transformations_path(path_data, batch_n):
+    path_reg = "{}movies_registered_{}/".format(path_data, batch_n)
+    path_trans_global = "{}transformations/global/".format(path_reg)
+    path_trans_steps = "{}transformations/steps/".format(path_reg)
+    return path_trans_global, path_trans_steps
